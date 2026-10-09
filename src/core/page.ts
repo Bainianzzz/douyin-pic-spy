@@ -1,9 +1,18 @@
 /** Which Douyin surface the script is currently running on. */
 
+/** Own-profile tabs whose grid supports batch selection. */
+const BATCH_TABS = new Set([
+  'favorite_collection',
+  'watch_later',
+  'like',
+  'recommend',
+  'record',
+]);
+
 export function isCollectionPage(): boolean {
   if (!location.pathname.startsWith('/user/')) return false;
   const tab = new URLSearchParams(location.search).get('showTab');
-  return tab === 'favorite_collection' || tab === 'collection';
+  return tab !== null && BATCH_TABS.has(tab);
 }
 
 /** Run `fn` on every SPA navigation (pushState / replaceState / popstate). */

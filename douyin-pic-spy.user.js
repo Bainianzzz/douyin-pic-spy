@@ -186,10 +186,17 @@
     } catch {
     }
   }
+  const BATCH_TABS = new Set([
+    "favorite_collection",
+    "watch_later",
+    "like",
+    "recommend",
+    "record"
+  ]);
   function isCollectionPage() {
     if (!location.pathname.startsWith("/user/")) return false;
     const tab = new URLSearchParams(location.search).get("showTab");
-    return tab === "favorite_collection" || tab === "collection";
+    return tab !== null && BATCH_TABS.has(tab);
   }
   function onNavigate(fn) {
     const wrap = (type) => {
