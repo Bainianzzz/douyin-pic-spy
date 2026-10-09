@@ -1,5 +1,7 @@
 # 架构
 
+[English](docs/ARCHITECTURE.en.md) · 中文
+
 ## 工作原理
 
 抖音的图文数据有两个来源，脚本两者都覆盖：
