@@ -1,5 +1,6 @@
 import { store } from '../env';
 import { idFromHref } from '../core/page';
+import { L } from '../i18n';
 import { ICON_CHECK } from '../ui/icons';
 import { setHint, setStatus } from '../ui/toast';
 import { runBatch, type BatchItem } from './run';
@@ -77,7 +78,7 @@ function scheduleDecorate(): void {
 }
 
 function updateBar(): void {
-  if (countEl) countEl.textContent = `已选 ${selected.size} 项`;
+  if (countEl) countEl.textContent = L.status.selected({ count: selected.size });
   if (startBtn) startBtn.disabled = selected.size === 0;
 }
 
@@ -109,12 +110,12 @@ function buildBar(): void {
 
   startBtn = document.createElement('button');
   startBtn.id = 'dy-batch-start';
-  startBtn.textContent = '开始下载';
+  startBtn.textContent = L.status.start();
   startBtn.disabled = true;
 
   const cancelBtn = document.createElement('button');
   cancelBtn.id = 'dy-batch-cancel';
-  cancelBtn.textContent = '取消';
+  cancelBtn.textContent = L.status.cancel();
 
   bar.append(countEl, startBtn, cancelBtn);
   document.body.appendChild(bar);
@@ -125,7 +126,7 @@ function buildBar(): void {
       title: store.byId[id]?.title || '',
     }));
     if (!items.length) {
-      setStatus('还没有选择任何作品', 'warn');
+      setStatus(L.status.nothingSelected(), 'warn');
       return;
     }
     exitSelection();
@@ -149,7 +150,7 @@ export function enterSelection(): void {
   decorateAll();
   buildBar();
   updateBar();
-  setHint('点击封面选择要下载的作品', ['纯视频无法下载；', '部分图文可能提取失败，需手动下载']);
+  setHint(L.status.selectHint(), [L.status.selectNote1(), L.status.selectNote2()]);
 }
 
 export function exitSelection(): void {

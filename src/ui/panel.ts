@@ -2,6 +2,7 @@ import { enterSelection, exitSelection, isSelecting } from '../batch/selection';
 import { isCollectionPage, onNavigate } from '../core/page';
 import { downloadAll } from '../download-all';
 import { getRootDir } from '../fs/directory';
+import { L } from '../i18n';
 import { idbGet } from '../fs/idb';
 import type { DirHandle } from '../fs/types';
 import { DEFAULT_FOLDER_MODE, folderMode } from '../utils/naming';
@@ -24,21 +25,21 @@ export function buildUI(): void {
   panel.id = 'dy-img-dl-panel';
   panel.innerHTML = `
     <div id="dy-img-dl-box">
-      <div class="row"><span>命名方式</span>
+      <div class="row"><span>${L.panel.naming()}</span>
         <select id="dy-img-dl-mode">
-          <option value="title_time">标题_时间（默认）</option>
-          <option value="title_id">标题_ID</option>
-          <option value="title">仅标题</option>
-          <option value="id">仅ID</option>
+          <option value="title_time">${L.panel.modeTitleTime()}</option>
+          <option value="title_id">${L.panel.modeTitleId()}</option>
+          <option value="title">${L.panel.modeTitle()}</option>
+          <option value="id">${L.panel.modeId()}</option>
         </select></div>
-      <div class="row"><span>目标位置</span>
-        <button class="mini" id="dy-img-dl-pick">选择文件夹</button></div>
-      <div class="row"><label><input type="checkbox" id="dy-img-dl-clean"> 重下前清空该作品文件夹</label></div>
+      <div class="row"><span>${L.panel.target()}</span>
+        <button class="mini" id="dy-img-dl-pick">${L.panel.choose()}</button></div>
+      <div class="row"><label><input type="checkbox" id="dy-img-dl-clean"> ${L.panel.clean()}</label></div>
     </div>
     <div id="dy-img-dl-toast"></div>
     <div id="dy-img-dl-pill">
-      <button id="dy-img-dl-btn" title="下载当前作品的全部图片">${ICON_DOWNLOAD}<span>下载图片</span></button>
-      <button id="dy-img-dl-gear" title="设置">${ICON_GEAR}</button>
+      <button id="dy-img-dl-btn" title="${L.panel.downloadTitle()}">${ICON_DOWNLOAD}<span>${L.panel.download()}</span></button>
+      <button id="dy-img-dl-gear" title="${L.panel.settings()}">${ICON_GEAR}</button>
     </div>`;
 
   document.body.appendChild(panel);
@@ -60,7 +61,7 @@ export function buildUI(): void {
     const row = clean.closest('.row') as HTMLElement | null;
     if (row) {
       row.style.opacity = isTimestamp ? '.45' : '1';
-      row.title = isTimestamp ? '标题_时间 模式每次生成新文件夹，无需清空' : '';
+      row.title = isTimestamp ? L.panel.cleanDisabled() : '';
     }
   };
   syncClean();
@@ -69,9 +70,9 @@ export function buildUI(): void {
   const downloadLabel = downloadBtn.querySelector('span') as HTMLElement;
 
   const syncLabel = () => {
-    if (isSelecting()) downloadLabel.textContent = '退出选择';
-    else if (isCollectionPage()) downloadLabel.textContent = '批量下载';
-    else downloadLabel.textContent = '下载图片';
+    if (isSelecting()) downloadLabel.textContent = L.panel.exitSelect();
+    else if (isCollectionPage()) downloadLabel.textContent = L.panel.batch();
+    else downloadLabel.textContent = L.panel.download();
   };
 
   downloadBtn.addEventListener('click', () => {
@@ -109,7 +110,7 @@ export function buildUI(): void {
       if (handle) setDirLabel(handle.name);
     } catch (e) {
       if ((e as { name?: string } | null)?.name !== 'AbortError') {
-        setStatus('选择文件夹失败：' + errorMessage(e), 'warn');
+        setStatus(L.status.chooseFailed({ message: errorMessage(e) }), 'warn');
       }
     }
   });

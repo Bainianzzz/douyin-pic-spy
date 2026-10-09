@@ -1,0 +1,46 @@
+import type { Translation } from '../i18n-types';
+
+const zhCN = {
+  panel: {
+    download: '下载图片',
+    batch: '批量下载',
+    exitSelect: '退出选择',
+    settings: '设置',
+    settingsTitle: '设置',
+    downloadTitle: '下载当前作品的全部图片',
+    naming: '命名方式',
+    modeTitleTime: '标题_时间（默认）',
+    modeTitleId: '标题_ID',
+    modeTitle: '仅标题',
+    modeId: '仅ID',
+    target: '目标位置',
+    choose: '选择文件夹',
+    clean: '重下前清空该作品文件夹',
+    cleanDisabled: '标题_时间 模式每次生成新文件夹，无需清空',
+  },
+  status: {
+    preparing: '准备中…',
+    clearing: '清空旧文件…',
+    downloading: '下载中 {current}/{total} …',
+    doneOk: '完成：成功 {ok}\n→ {folder}',
+    doneFail: '完成：成功 {ok}，失败 {fail}\n→ {folder}',
+    notCaptured: '未截获到图片数据，请刷新页面后重新点开该作品',
+    noFolder: '还没选目标文件夹，点「选择文件夹」授权一次',
+    noBrowser: '批量下载与选择文件夹需要 Chrome / Edge',
+    cancelled: '已取消',
+    error: '出错：{message}',
+    chooseFailed: '选择文件夹失败：{message}',
+    nothingSelected: '还没有选择任何作品',
+    batchProgress: '批量 {current}/{total}：{title}',
+    batchDone: '批量完成：成功 {ok} · 未截获 {missed} · 失败 {failed}',
+    missedList: '未截获：{titles}',
+    selectHint: '点击封面选择要下载的作品',
+    selectNote1: '纯视频无法下载；',
+    selectNote2: '部分图文可能提取失败，需手动下载',
+    selected: '已选 {count} 项',
+    start: '开始下载',
+    cancel: '取消',
+  },
+} satisfies Translation;
+
+export default zhCN;

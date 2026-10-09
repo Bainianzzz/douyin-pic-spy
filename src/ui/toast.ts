@@ -1,3 +1,4 @@
+import { L } from '../i18n';
 import { refs } from './refs';
 
 export type StatusKind = 'info' | 'warn' | 'ok';
@@ -42,6 +43,6 @@ export function setHint(title: string, subLines: string[]): void {
 export function setDirLabel(name?: string | null): void {
   const btn = refs.pickBtn;
   if (!btn) return;
-  btn.textContent = name || '选择文件夹';
-  btn.title = name || '选择目标文件夹';
+  btn.textContent = name || L.panel.choose();
+  btn.title = name || L.panel.choose();
 }

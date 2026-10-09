@@ -1,4 +1,5 @@
 import { store } from '../env';
+import { L } from '../i18n';
 import { downloadPost, ensureRoot, hasDirectoryPicker } from '../download';
 import { setStatus } from '../ui/toast';
 
@@ -21,17 +22,17 @@ function delay(ms: number): Promise<void> {
  */
 export async function runBatch(items: BatchItem[]): Promise<void> {
   if (!items.length) {
-    setStatus('还没有选择任何作品', 'warn');
+    setStatus(L.status.nothingSelected(), 'warn');
     return;
   }
   if (!hasDirectoryPicker()) {
-    setStatus('批量下载需要 Chrome / Edge（支持自选文件夹）', 'warn');
+    setStatus(L.status.noBrowser(), 'warn');
     return;
   }
 
   const root = await ensureRoot(false);
   if (!root) {
-    setStatus('还没选目标文件夹，点「选择文件夹」授权一次', 'warn');
+    setStatus(L.status.noFolder(), 'warn');
     return;
   }
 
@@ -50,20 +51,20 @@ export async function runBatch(items: BatchItem[]): Promise<void> {
       continue;
     }
 
-    setStatus(`批量 ${i + 1}/${items.length}：${captured.title || item.id}`);
+    setStatus(L.status.batchProgress({ current: i + 1, total: items.length, title: captured.title || item.id }));
     try {
       const result = await downloadPost(root, item.id, captured.title, captured.images);
       if (result.fail === 0) ok++;
       else failed++;
     } catch (e) {
       failed++;
-      console.warn('[抖音图片下载] 批量失败:', item.id, e);
+      console.warn('[douyin-pic-spy] batch item failed:', item.id, e);
     }
 
     await delay(DELAY_MS);
   }
 
-  const head = `批量完成：成功 ${ok} · 未截获 ${missed} · 失败 ${failed}`;
-  const tail = missedTitles.length ? `\n未截获：${missedTitles.join('、')}` : '';
+  const head = L.status.batchDone({ ok, missed, failed });
+  const tail = missedTitles.length ? '\n' + L.status.missedList({ titles: missedTitles.join(', ') }) : '';
   setStatus(head + tail, missed || failed ? 'warn' : 'ok');
 }

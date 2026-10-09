@@ -1,0 +1,46 @@
+import type { BaseTranslation } from 'typesafe-i18n';
+
+const en = {
+  panel: {
+    download: 'Download images',
+    batch: 'Batch download',
+    exitSelect: 'Exit selection',
+    settings: 'Settings',
+    settingsTitle: 'Settings',
+    downloadTitle: 'Download all images of this post',
+    naming: 'Folder name',
+    modeTitleTime: 'Title + time (default)',
+    modeTitleId: 'Title + ID',
+    modeTitle: 'Title only',
+    modeId: 'ID only',
+    target: 'Target folder',
+    choose: 'Choose folder',
+    clean: 'Clear the post folder before re-downloading',
+    cleanDisabled: 'Timestamp mode always creates a new folder, no need to clear',
+  },
+  status: {
+    preparing: 'Preparing…',
+    clearing: 'Clearing old files…',
+    downloading: 'Downloading {current}/{total} …',
+    doneOk: 'Done: {ok} succeeded\n→ {folder}',
+    doneFail: 'Done: {ok} succeeded, {fail} failed\n→ {folder}',
+    notCaptured: 'No image data captured. Refresh the page and reopen this post.',
+    noFolder: 'No target folder yet. Click "Choose folder" to grant access once.',
+    noBrowser: 'Batch and folder saving need Chrome or Edge',
+    cancelled: 'Cancelled',
+    error: 'Error: {message}',
+    chooseFailed: 'Failed to choose folder: {message}',
+    nothingSelected: 'No posts selected',
+    batchProgress: 'Batch {current}/{total}: {title}',
+    batchDone: 'Batch done: {ok} succeeded · {missed} not captured · {failed} failed',
+    missedList: 'Not captured: {titles}',
+    selectHint: 'Click a cover to select posts to download',
+    selectNote1: 'Pure videos cannot be downloaded;',
+    selectNote2: 'some image posts may fail and need manual download',
+    selected: 'Selected: {count}',
+    start: 'Start download',
+    cancel: 'Cancel',
+  },
+} satisfies BaseTranslation;
+
+export default en;

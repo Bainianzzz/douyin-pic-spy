@@ -47,7 +47,7 @@ export async function downloadPost(
       ok++;
     } catch (e) {
       fail++;
-      console.warn('[抖音图片下载] 失败:', images[i], e);
+      console.warn('[douyin-pic-spy] image failed:', images[i], e);
     }
   }
 

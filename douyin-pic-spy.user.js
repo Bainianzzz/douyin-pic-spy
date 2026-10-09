@@ -2,7 +2,7 @@
 // @name            抖音图文图片下载器
 // @name:en         Douyin Pic Spy
 // @namespace       https://github.com/Bainianzzz/douyin-pic-spy
-// @version         2.4.0
+// @version         2.5.0
 // @author          Bainianzzz
 // @description     在抖音网页版作品页一键下载全部图片，按作品打包进你指定的文件夹（仅图文作者图，不含推荐流/头像）
 // @description:en  Download all images from a Douyin image post into a folder you choose, one subfolder per post.
@@ -199,7 +199,7 @@
     return tab !== null && BATCH_TABS.has(tab);
   }
   function onNavigate(fn) {
-    const wrap = (type) => {
+    const wrap2 = (type) => {
       const original = history[type];
       history[type] = function(...args) {
         const result = original.apply(this, args);
@@ -210,8 +210,8 @@
         return result;
       };
     };
-    wrap("pushState");
-    wrap("replaceState");
+    wrap2("pushState");
+    wrap2("replaceState");
     window.addEventListener("popstate", fn);
     return () => window.removeEventListener("popstate", fn);
   }
@@ -220,6 +220,265 @@
     const match = href.match(/\/(?:video|note)\/(\d+)/);
     return match ? match[1] : null;
   }
+  var p = (e) => !!e;
+  var n = (e) => Array.from(new Set(e));
+  var Nr = (e, o, ...s) => {
+    for (let i of s) {
+      let t = l(o, i);
+      if (t) return t;
+    }
+    return e;
+  }, l = (e, o) => {
+    let s = o().map((r) => r.toLowerCase()), i = n(s.flatMap((r) => [r, r.split("-")[0]])), t = e.map((r) => r.toLowerCase());
+    return i.map((r) => {
+      let c = t.findIndex((x) => x === r);
+      return c >= 0 && e[c];
+    }).find(p);
+  };
+  const removeEmptyValues = (object) => Object.fromEntries(
+Object.entries(object).map(([key, value]) => key !== "i" && value && value != "0" && [key, value]).filter(Boolean)
+  );
+  const trimAllValues = (part) => Object.fromEntries(Object.keys(part).map((key) => {
+    const val = part[key];
+    return [
+      key,
+      Array.isArray(val) ? val.map((v) => v === null || v === void 0 ? void 0 : v.trim()) : val === !!val ? val : val === null || val === void 0 ? void 0 : val.trim()
+    ];
+  }));
+  const parseArgumentPart = (text) => {
+    const [keyPart = "", ...formatterKeys] = text.split("|");
+    const [keyWithoutType = "", type] = keyPart.split(":");
+    const [key, isOptional] = keyWithoutType.split("?");
+    return { k: key, i: type, n: isOptional === "", f: formatterKeys };
+  };
+  const isBasicPluralPart = (part) => !!(part.o || part.r);
+  const parsePluralPart = (content, lastAccessor) => {
+    let [key, values] = content.split(":");
+    if (!values) {
+      values = key;
+      key = lastAccessor;
+    }
+    const entries = values.split("|");
+    const [zero, one, two, few, many, rest] = entries;
+    const nrOfEntries = entries.filter((entry) => entry !== void 0).length;
+    if (nrOfEntries === 1) {
+      return { k: key, r: zero };
+    }
+    if (nrOfEntries === 2) {
+      return { k: key, o: zero, r: one };
+    }
+    if (nrOfEntries === 3) {
+      return { k: key, z: zero, o: one, r: two };
+    }
+    return { k: key, z: zero, o: one, t: two, f: few, m: many, r: rest };
+  };
+  const REGEX_SWITCH_CASE = /^\{.*\}$/;
+  const parseCases = (text) => Object.fromEntries(removeOuterBrackets(text).split(",").map((part) => part.split(":")).reduce((accumulator, entry) => {
+    if (entry.length === 2) {
+      return [...accumulator, entry.map((entry2) => entry2.trim())];
+    }
+    accumulator[accumulator.length - 1][1] += "," + entry[0];
+    return accumulator;
+  }, []));
+  const REGEX_BRACKETS_SPLIT = /(\{(?:[^{}]+|\{(?:[^{}]+)*\})*\})/g;
+  const removeOuterBrackets = (text) => text.substring(1, text.length - 1);
+  const parseRawText = (rawText, optimize = true, firstKey = "", lastKey = "") => rawText.split(REGEX_BRACKETS_SPLIT).map((part) => {
+    if (!part.match(REGEX_BRACKETS_SPLIT)) {
+      return part;
+    }
+    const content = removeOuterBrackets(part);
+    if (content.startsWith("{")) {
+      return parsePluralPart(removeOuterBrackets(content), lastKey);
+    }
+    const parsedPart = parseArgumentPart(content);
+    lastKey = parsedPart.k || lastKey;
+    !firstKey && (firstKey = lastKey);
+    return parsedPart;
+  }).map((part) => {
+    if (typeof part === "string")
+      return part;
+    if (!part.k)
+      part.k = firstKey || "0";
+    const trimmed = trimAllValues(part);
+    return optimize ? removeEmptyValues(trimmed) : trimmed;
+  });
+  const applyFormatters = (formatters, formatterKeys, initialValue) => formatterKeys.reduce((value, formatterKey) => {
+    var _a, _b;
+    return (_b = formatterKey.match(REGEX_SWITCH_CASE) ? ((cases) => {
+      var _a2;
+      return (_a2 = cases[value]) !== null && _a2 !== void 0 ? _a2 : cases["*"];
+    })(parseCases(formatterKey)) : (_a = formatters[formatterKey]) === null || _a === void 0 ? void 0 : _a.call(formatters, value)) !== null && _b !== void 0 ? _b : value;
+  }, initialValue);
+  const getPlural = (pluralRules, { z, o, t, f, m, r }, value) => {
+    switch (z && value == 0 ? "zero" : pluralRules.select(value)) {
+      case "zero":
+        return z;
+      case "one":
+        return o;
+      case "two":
+        return t;
+      case "few":
+        return f !== null && f !== void 0 ? f : r;
+      case "many":
+        return m !== null && m !== void 0 ? m : r;
+      default:
+        return r;
+    }
+  };
+  const REGEX_PLURAL_VALUE_INJECTION = /\?\?/g;
+  const applyArguments = (textParts, pluralRules, formatters, args) => textParts.map((part) => {
+    if (typeof part === "string") {
+      return part;
+    }
+    const { k: key = "0", f: formatterKeys = [] } = part;
+    const value = args[key];
+    if (isBasicPluralPart(part)) {
+      return ((typeof value === "boolean" ? value ? part.o : part.r : getPlural(pluralRules, part, value)) || "").replace(REGEX_PLURAL_VALUE_INJECTION, value);
+    }
+    const formattedValue = formatterKeys.length ? applyFormatters(formatters, formatterKeys, value) : value;
+    return ("" + (formattedValue !== null && formattedValue !== void 0 ? formattedValue : "")).trim();
+  }).join("");
+  const translate = (textParts, pluralRules, formatters, args) => {
+    const firstArg = args[0];
+    const isObject = firstArg && typeof firstArg === "object" && firstArg.constructor === Object;
+    const transformedArgs = args.length === 1 && isObject ? firstArg : args;
+    return applyArguments(textParts, pluralRules, formatters, transformedArgs);
+  };
+  const getPartsFromString = (cache, text) => cache[text] || (cache[text] = parseRawText(text));
+  const getTranslateInstance = (locale2, formatters) => {
+    const cache = {};
+    const pluralRules = new Intl.PluralRules(locale2);
+    return (text, ...args) => translate(getPartsFromString(cache, text), pluralRules, formatters, args);
+  };
+  function i18nObject$1(locale2, translations, formatters = {}) {
+    return createProxy(translations, getTranslateInstance(locale2, formatters));
+  }
+  const wrap = (proxyObject = {}, translateFn) => typeof proxyObject === "string" ? translateFn.bind(null, proxyObject) : Object.assign(Object.defineProperty(() => "", "name", { writable: true }), proxyObject);
+  const createProxy = (proxyObject, translateFn) => new Proxy(wrap(proxyObject, translateFn), {
+    get: (target, key) => {
+      if (key === Symbol.iterator)
+        return [][Symbol.iterator].bind(Object.values(target).map((entry) => wrap(entry, translateFn)));
+      return createProxy(target[key], translateFn);
+    }
+  });
+  const baseLocale = "en";
+  const locales = [
+    "en",
+    "zh-CN"
+  ];
+  const loadedLocales = {};
+  const loadedFormatters = {};
+  const i18nObject = (locale2) => i18nObject$1(
+    locale2,
+    loadedLocales[locale2],
+    loadedFormatters[locale2]
+  );
+  const initFormatters = (locale2) => {
+    const formatters = {
+};
+    return formatters;
+  };
+  const en = {
+    panel: {
+      download: "Download images",
+      batch: "Batch download",
+      exitSelect: "Exit selection",
+      settings: "Settings",
+      settingsTitle: "Settings",
+      downloadTitle: "Download all images of this post",
+      naming: "Folder name",
+      modeTitleTime: "Title + time (default)",
+      modeTitleId: "Title + ID",
+      modeTitle: "Title only",
+      modeId: "ID only",
+      target: "Target folder",
+      choose: "Choose folder",
+      clean: "Clear the post folder before re-downloading",
+      cleanDisabled: "Timestamp mode always creates a new folder, no need to clear"
+    },
+    status: {
+      preparing: "Preparing…",
+      clearing: "Clearing old files…",
+      downloading: "Downloading {current}/{total} …",
+      doneOk: "Done: {ok} succeeded\n→ {folder}",
+      doneFail: "Done: {ok} succeeded, {fail} failed\n→ {folder}",
+      notCaptured: "No image data captured. Refresh the page and reopen this post.",
+      noFolder: 'No target folder yet. Click "Choose folder" to grant access once.',
+      noBrowser: "Batch and folder saving need Chrome or Edge",
+      cancelled: "Cancelled",
+      error: "Error: {message}",
+      chooseFailed: "Failed to choose folder: {message}",
+      nothingSelected: "No posts selected",
+      batchProgress: "Batch {current}/{total}: {title}",
+      batchDone: "Batch done: {ok} succeeded · {missed} not captured · {failed} failed",
+      missedList: "Not captured: {titles}",
+      selectHint: "Click a cover to select posts to download",
+      selectNote1: "Pure videos cannot be downloaded;",
+      selectNote2: "some image posts may fail and need manual download",
+      selected: "Selected: {count}",
+      start: "Start download",
+      cancel: "Cancel"
+    }
+  };
+  const zhCN = {
+    panel: {
+      download: "下载图片",
+      batch: "批量下载",
+      exitSelect: "退出选择",
+      settings: "设置",
+      settingsTitle: "设置",
+      downloadTitle: "下载当前作品的全部图片",
+      naming: "命名方式",
+      modeTitleTime: "标题_时间（默认）",
+      modeTitleId: "标题_ID",
+      modeTitle: "仅标题",
+      modeId: "仅ID",
+      target: "目标位置",
+      choose: "选择文件夹",
+      clean: "重下前清空该作品文件夹",
+      cleanDisabled: "标题_时间 模式每次生成新文件夹，无需清空"
+    },
+    status: {
+      preparing: "准备中…",
+      clearing: "清空旧文件…",
+      downloading: "下载中 {current}/{total} …",
+      doneOk: "完成：成功 {ok}\n→ {folder}",
+      doneFail: "完成：成功 {ok}，失败 {fail}\n→ {folder}",
+      notCaptured: "未截获到图片数据，请刷新页面后重新点开该作品",
+      noFolder: "还没选目标文件夹，点「选择文件夹」授权一次",
+      noBrowser: "批量下载与选择文件夹需要 Chrome / Edge",
+      cancelled: "已取消",
+      error: "出错：{message}",
+      chooseFailed: "选择文件夹失败：{message}",
+      nothingSelected: "还没有选择任何作品",
+      batchProgress: "批量 {current}/{total}：{title}",
+      batchDone: "批量完成：成功 {ok} · 未截获 {missed} · 失败 {failed}",
+      missedList: "未截获：{titles}",
+      selectHint: "点击封面选择要下载的作品",
+      selectNote1: "纯视频无法下载；",
+      selectNote2: "部分图文可能提取失败，需手动下载",
+      selected: "已选 {count} 项",
+      start: "开始下载",
+      cancel: "取消"
+    }
+  };
+  const localeTranslations = {
+    en,
+    "zh-CN": zhCN
+  };
+  const loadLocale = (locale2) => {
+    if (loadedLocales[locale2]) return;
+    loadedLocales[locale2] = localeTranslations[locale2];
+    loadFormatters(locale2);
+  };
+  const loadFormatters = (locale2) => void (loadedFormatters[locale2] = initFormatters());
+  const browserLocales = () => {
+    const langs = navigator.languages?.length ? navigator.languages : [navigator.language];
+    return langs.map((lang) => lang.toLowerCase().startsWith("zh") ? "zh-CN" : lang);
+  };
+  const locale = Nr(baseLocale, locales, browserLocales);
+  loadLocale(locale);
+  const L = i18nObject(locale);
   const ICON_DOWNLOAD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
   const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
   const ICON_GEAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>';
@@ -262,8 +521,8 @@
   function setDirLabel(name) {
     const btn = refs.pickBtn;
     if (!btn) return;
-    btn.textContent = name || "选择文件夹";
-    btn.title = name || "选择目标文件夹";
+    btn.textContent = name || L.panel.choose();
+    btn.title = name || L.panel.choose();
   }
   const DB_NAME = "dy_img_dl";
   const STORE_NAME = "kv";
@@ -374,8 +633,8 @@
   function folderMode() {
     return GM_getValue("folderMode", DEFAULT_FOLDER_MODE);
   }
-  function pad2(n) {
-    return String(n).padStart(2, "0");
+  function pad2(n2) {
+    return String(n2).padStart(2, "0");
   }
   function stamp() {
     const d = new Date();
@@ -415,7 +674,7 @@
         ok++;
       } catch (e) {
         fail++;
-        console.warn("[抖音图片下载] 失败:", images[i], e);
+        console.warn("[douyin-pic-spy] image failed:", images[i], e);
       }
     }
     return { ok, fail, dir: dir.name };
@@ -426,16 +685,16 @@
   }
   async function runBatch(items) {
     if (!items.length) {
-      setStatus("还没有选择任何作品", "warn");
+      setStatus(L.status.nothingSelected(), "warn");
       return;
     }
     if (!hasDirectoryPicker()) {
-      setStatus("批量下载需要 Chrome / Edge（支持自选文件夹）", "warn");
+      setStatus(L.status.noBrowser(), "warn");
       return;
     }
     const root = await ensureRoot(false);
     if (!root) {
-      setStatus("还没选目标文件夹，点「选择文件夹」授权一次", "warn");
+      setStatus(L.status.noFolder(), "warn");
       return;
     }
     let ok = 0;
@@ -450,20 +709,19 @@
         missedTitles.push(captured?.title || item.title || item.id);
         continue;
       }
-      setStatus(`批量 ${i + 1}/${items.length}：${captured.title || item.id}`);
+      setStatus(L.status.batchProgress({ current: i + 1, total: items.length, title: captured.title || item.id }));
       try {
         const result = await downloadPost(root, item.id, captured.title, captured.images);
         if (result.fail === 0) ok++;
         else failed++;
       } catch (e) {
         failed++;
-        console.warn("[抖音图片下载] 批量失败:", item.id, e);
+        console.warn("[douyin-pic-spy] batch item failed:", item.id, e);
       }
       await delay(DELAY_MS);
     }
-    const head = `批量完成：成功 ${ok} · 未截获 ${missed} · 失败 ${failed}`;
-    const tail = missedTitles.length ? `
-未截获：${missedTitles.join("、")}` : "";
+    const head = L.status.batchDone({ ok, missed, failed });
+    const tail = missedTitles.length ? "\n" + L.status.missedList({ titles: missedTitles.join(", ") }) : "";
     setStatus(head + tail, missed || failed ? "warn" : "ok");
   }
   const BATCH_CSS = `
@@ -549,7 +807,7 @@
     });
   }
   function updateBar() {
-    if (countEl) countEl.textContent = `已选 ${selected.size} 项`;
+    if (countEl) countEl.textContent = L.status.selected({ count: selected.size });
     if (startBtn) startBtn.disabled = selected.size === 0;
   }
   function onClick(event) {
@@ -573,11 +831,11 @@
     countEl.className = "count";
     startBtn = document.createElement("button");
     startBtn.id = "dy-batch-start";
-    startBtn.textContent = "开始下载";
+    startBtn.textContent = L.status.start();
     startBtn.disabled = true;
     const cancelBtn = document.createElement("button");
     cancelBtn.id = "dy-batch-cancel";
-    cancelBtn.textContent = "取消";
+    cancelBtn.textContent = L.status.cancel();
     bar.append(countEl, startBtn, cancelBtn);
     document.body.appendChild(bar);
     startBtn.addEventListener("click", () => {
@@ -586,7 +844,7 @@
         title: store.byId[id]?.title || ""
       }));
       if (!items.length) {
-        setStatus("还没有选择任何作品", "warn");
+        setStatus(L.status.nothingSelected(), "warn");
         return;
       }
       exitSelection();
@@ -605,7 +863,7 @@
     decorateAll();
     buildBar();
     updateBar();
-    setHint("点击封面选择要下载的作品", ["纯视频无法下载；", "部分图文可能提取失败，需手动下载"]);
+    setHint(L.status.selectHint(), [L.status.selectNote1(), L.status.selectNote2()]);
   }
   function exitSelection() {
     if (!active) return;
@@ -649,28 +907,28 @@
     if (running) return;
     const bundle = getImages();
     if (!bundle) {
-      setStatus("未截获到图片数据，请刷新页面后重新点开该作品", "warn");
+      setStatus(L.status.notCaptured(), "warn");
       return;
     }
     if (!hasDirectoryPicker()) {
-      setStatus("当前浏览器不支持自选文件夹，请用 Chrome / Edge", "warn");
+      setStatus(L.status.noBrowser(), "warn");
       return;
     }
     running = true;
-    setStatus("准备中…");
+    setStatus(L.status.preparing());
     try {
       const root = await ensureRoot(forcePick);
       if (!root) {
-        setStatus("还没选目标文件夹，点「选择文件夹」授权一次", "warn");
+        setStatus(L.status.noFolder(), "warn");
         return;
       }
       const result = await downloadPost(root, bundle.id, bundle.title, bundle.images);
-      setStatus(`完成：成功 ${result.ok}${result.fail ? `，失败 ${result.fail}` : ""}
-→ ${root.name}/${result.dir}`);
+      const folder = `${root.name}/${result.dir}`;
+      setStatus(result.fail ? L.status.doneFail({ ok: result.ok, fail: result.fail, folder }) : L.status.doneOk({ ok: result.ok, folder }));
     } catch (e) {
       const err = e;
-      if (err?.name === "AbortError") setStatus("已取消");
-      else setStatus("出错：" + (err?.message ? err.message : String(e)), "warn");
+      if (err?.name === "AbortError") setStatus(L.status.cancelled());
+      else setStatus(L.status.error({ message: err?.message ? err.message : String(e) }), "warn");
     } finally {
       running = false;
     }
@@ -719,21 +977,21 @@
     panel.id = "dy-img-dl-panel";
     panel.innerHTML = `
     <div id="dy-img-dl-box">
-      <div class="row"><span>命名方式</span>
+      <div class="row"><span>${L.panel.naming()}</span>
         <select id="dy-img-dl-mode">
-          <option value="title_time">标题_时间（默认）</option>
-          <option value="title_id">标题_ID</option>
-          <option value="title">仅标题</option>
-          <option value="id">仅ID</option>
+          <option value="title_time">${L.panel.modeTitleTime()}</option>
+          <option value="title_id">${L.panel.modeTitleId()}</option>
+          <option value="title">${L.panel.modeTitle()}</option>
+          <option value="id">${L.panel.modeId()}</option>
         </select></div>
-      <div class="row"><span>目标位置</span>
-        <button class="mini" id="dy-img-dl-pick">选择文件夹</button></div>
-      <div class="row"><label><input type="checkbox" id="dy-img-dl-clean"> 重下前清空该作品文件夹</label></div>
+      <div class="row"><span>${L.panel.target()}</span>
+        <button class="mini" id="dy-img-dl-pick">${L.panel.choose()}</button></div>
+      <div class="row"><label><input type="checkbox" id="dy-img-dl-clean"> ${L.panel.clean()}</label></div>
     </div>
     <div id="dy-img-dl-toast"></div>
     <div id="dy-img-dl-pill">
-      <button id="dy-img-dl-btn" title="下载当前作品的全部图片">${ICON_DOWNLOAD}<span>下载图片</span></button>
-      <button id="dy-img-dl-gear" title="设置">${ICON_GEAR}</button>
+      <button id="dy-img-dl-btn" title="${L.panel.downloadTitle()}">${ICON_DOWNLOAD}<span>${L.panel.download()}</span></button>
+      <button id="dy-img-dl-gear" title="${L.panel.settings()}">${ICON_GEAR}</button>
     </div>`;
     document.body.appendChild(panel);
     refs.statusEl = panel.querySelector("#dy-img-dl-toast");
@@ -750,16 +1008,16 @@
       const row = clean.closest(".row");
       if (row) {
         row.style.opacity = isTimestamp ? ".45" : "1";
-        row.title = isTimestamp ? "标题_时间 模式每次生成新文件夹，无需清空" : "";
+        row.title = isTimestamp ? L.panel.cleanDisabled() : "";
       }
     };
     syncClean();
     const downloadBtn = panel.querySelector("#dy-img-dl-btn");
     const downloadLabel = downloadBtn.querySelector("span");
     const syncLabel = () => {
-      if (isSelecting()) downloadLabel.textContent = "退出选择";
-      else if (isCollectionPage()) downloadLabel.textContent = "批量下载";
-      else downloadLabel.textContent = "下载图片";
+      if (isSelecting()) downloadLabel.textContent = L.panel.exitSelect();
+      else if (isCollectionPage()) downloadLabel.textContent = L.panel.batch();
+      else downloadLabel.textContent = L.panel.download();
     };
     downloadBtn.addEventListener("click", () => {
       if (isSelecting()) {
@@ -791,7 +1049,7 @@
         if (handle) setDirLabel(handle.name);
       } catch (e) {
         if (e?.name !== "AbortError") {
-          setStatus("选择文件夹失败：" + errorMessage(e), "warn");
+          setStatus(L.status.chooseFailed({ message: errorMessage(e) }), "warn");
         }
       }
     });
