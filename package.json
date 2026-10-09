@@ -1,6 +1,6 @@
 {
   "name": "douyin-pic-spy",
-  "version": "2.3.1",
+  "version": "2.4.0",
   "private": true,
   "description": "Tampermonkey userscript: download all images of a Douyin image post into a folder you choose.",
   "type": "module",

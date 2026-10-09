@@ -21,7 +21,7 @@ export default defineConfig({
           en: 'Douyin Pic Spy',
         },
         namespace: REPO,
-        version: '2.3.1',
+        version: '2.4.0',
         description: {
           '': '在抖音网页版作品页一键下载全部图片，按作品打包进你指定的文件夹（仅图文作者图，不含推荐流/头像）',
           en: 'Download all images from a Douyin image post into a folder you choose, one subfolder per post.',

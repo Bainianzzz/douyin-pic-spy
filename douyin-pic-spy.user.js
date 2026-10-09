@@ -2,7 +2,7 @@
 // @name            抖音图文图片下载器
 // @name:en         Douyin Pic Spy
 // @namespace       https://github.com/Bainianzzz/douyin-pic-spy
-// @version         2.3.1
+// @version         2.4.0
 // @author          Bainianzzz
 // @description     在抖音网页版作品页一键下载全部图片，按作品打包进你指定的文件夹（仅图文作者图，不含推荐流/头像）
 // @description:en  Download all images from a Douyin image post into a folder you choose, one subfolder per post.
