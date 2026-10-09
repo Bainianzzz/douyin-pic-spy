@@ -1,3 +1,9 @@
+# dependencies
+node_modules/
+
+# build output (root copy is committed on purpose for the raw install URL)
+dist/
+
 # macOS
 .DS_Store
 
@@ -9,7 +15,3 @@ npm-debug.log*
 .vscode/
 .idea/
 *.swp
-
-# Temp
-/tmp/
-*.b64
